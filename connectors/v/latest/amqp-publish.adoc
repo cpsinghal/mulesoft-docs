@@ -1,0 +1,68 @@
+= To Publish Messages
+:keywords: amqp, connector, publish
+:toc:
+:toc-title:
+
+This operation allows you to create a new AMQP Message and send it to the specified destination, be it a Queue or a Topic. With it, you can configure not only the content of the message, but also all the headers that may be need.
+
+== Sending a Message to a Queue
+
+When used in its default form, the connector will publish whatever is in the message payload:
+
+[source, xml, linenums]
+----
+<amqp:amqp exchangeName="targetExchange" config-ref="AMQP_config"/>
+----
+
+But what happens if the payload is not in the correct format, and you actually need to make a transformation? You could place a DataWeave transformation before the `publish` operation, but that would cause the message payload to change and impact the operation placed after the `publish` operation.
+
+To avoid this undesired impact, you can now place the transformation inside the `publish` operation:
+
+[source, xml, linenums]
+----
+<amqp:publish exchangeName="targetExchange" config-ref="AMQP_config">
+  <amqp:message>
+    <amqp:body>#[%dw 2.0
+   output application/json
+   ---
+   payload.payments
+   ]</amqp:body>
+  </amqp:message>
+</amqp:publish>
+----
+
+Now, the transformation can be used for generating the content that will be published, without producing a side effect on the message in transit.
+
+== Declaring a Reply Destination
+
+For the cases where you need an asynchronous reply to the Message being sent, the AMQP `publish` operation allows us to declare any `reply-to` destination. This destination will be communicated as a AMQP Header to the consumer of the Message, and is the destination were we should expect a reply to be sent.
+
+To declare the `reply-to` destination, we add it to the Message properties:
+
+[source, xml, linenums]
+----
+<amqp:publish config-ref="AMQP_config" exchangeName="#[vars.targetExchange]">
+    <amqp:message>
+    		<amqp:properties reply-to="replyToQueue" />
+    </amqp:message>
+</amqp:publish>
+----
+
+== Propagating The Correlation ID
+
+The `publish` operation allows you to configure what is the `correlationId` for the outgoing Message.
+
+First you need to configure wheter or not you want to send the `correlationId` when publishing the Message using the `sendCorrelationId` parameter. This parameter can be set to `ALWAYS` (always send the header), `NEVER` (never send the header) or `AUTO` (the default, use the application configuration).
+Then, you can either use the `correlationId` of the Event tha is sending the Message, or you can configure your own custom `correlationId` in the message builder:
+
+[source, xml, linenums]
+----
+<amqp:publish config-ref="AMQP_config" sendCorrelationId="ALWAYS"  exchangeName="#[vars.targetExchange]">
+    <amqp.message correlationId="#[attributes.headers.correlationId]"/>
+</amqp:publish>
+----
+
+
+== See Also
+
+link:amqp-publish-consume[To Listen For A Reply]
