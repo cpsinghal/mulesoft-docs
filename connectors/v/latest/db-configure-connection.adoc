@@ -11,7 +11,7 @@ Examples in this section show configurations for the connection types. They also
 [source,xml,linenums]
 ----
 <db:config name= "dbConfig">
-  <db:mysql-connection host="0.0.0.0" port="3306" user="Max" password="POWERS" database="someSchema"/>
+  <db:my-sql-connection host="0.0.0.0" port="3306" user="Max" password="POWERS" database="someSchema"/>
 </db:config>
 ----
 
